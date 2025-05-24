@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="container mx-auto p-6">
+    <h2 class="text-3xl font-bold text-center text-gray-800 mb-6">Sales Return</h2>
+
+    <!-- Search and Date Filters -->
+    <div class="flex flex-col sm:flex-row gap-4 mb-6">
+        <input type="text" name="q" value="{{ query }}" placeholder="Search by Bill No, Product, or SKU"
+            class="w-full sm:w-1/3 p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+        
+        <input type="date" name="start_date" value="{{ start_date|date:'Y-m-d' }}" 
+            class="p-3 border border-gray-300 rounded-md">
+        
+        <input type="date" name="end_date" value="{{ end_date|date:'Y-m-d' }}" 
+            class="p-3 border border-gray-300 rounded-md">
+
+        <button onclick="applyFilters()" class="px-5 py-3 bg-teal-600 text-white rounded-md shadow hover:bg-teal-700 transition">
+            Filter
+        </button>
+    </div>
+
+    <!-- Table of Sales Returns -->
+    <div class="overflow-x-auto bg-white shadow-md rounded-lg">
+        <table class="min-w-full border border-gray-200">
+            <thead class="bg-gray-300 text-gray-800 text-sm">
+                <tr>
+                    <th class="py-2 px-3 text-left">Bill No</th>
+                    <th class="py-2 px-3 text-left">Product</th>
+                    <th class="py-2 px-3 text-left">Quantity</th>
+                    <th class="py-2 px-3 text-left">Unit Price</th>
+                    <th class="py-2 px-3 text-left">Total</th>
+                    <th class="py-2 px-3 text-left">Return Date</th>
+                    <th class="py-2 px-3 text-left">Status</th>
+                    <th class="py-2 px-3 text-center" colspan="2">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 text-gray-700 text-sm">
+                {% for return in sales_returns %}
+                <tr class="hover:bg-gray-100 transition">
+                    <td class="py-2 px-3">{{ return.billid }}</td>
+                    <td class="py-2 px-3">{{ return.item_name }}</td>
+                    <td class="py-2 px-3">{{ return.quantity }}</td>
+                    <td class="py-2 px-3">₹{{ return.unit_price }}</td>
+                    <td class="py-2 px-3">₹{{ return.total_price }}</td>
+                    <td class="py-2 px-3">{{ return.return_date|date:"Y-m-d H:i" }}</td>
+                    <td class="py-2 px-3 font-semibold">
+                        {% if return.status == "Restocked" %}
+                            <span class="text-green-600">Restocked</span>
+                        {% else %}
+                            <span class="text-red-600">Pending</span>
+                        {% endif %}
+                    </td>
+                    <td class="py-2 px-3">
+                        {% if return.status == "Pending" %}
+                            <a href="{% url 'restock-item' return.return_id %}" class="text-blue-600 hover:underline">
+                                Restock
+                            </a>
+                        {% else %}
+                            <span class="text-gray-400 cursor-not-allowed">Restocked</span>
+                        {% endif %}
+                    </td>
+                    <td class="py-2 px-3">
+                        <a href="{% url 'sales-return-bill' return.return_id %}" class="text-blue-600 hover:underline">
+                            View Return Bill
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="py-4 text-center text-gray-500">No sales return items available</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination Controls -->
+    <div class="mt-4 flex justify-between">
+        <span>Page {{ page_object.number }} of {{ page_object.paginator.num_pages }}</span>
+        <div>
+            {% if page_object.has_previous %}
+                <a href="?page=1&q={{ query }}&start_date={{ start_date }}&end_date={{ end_date }}" class="px-3 py-2">First</a>
+                <a href="?page={{ page_object.previous_page_number }}&q={{ query }}&start_date={{ start_date }}&end_date={{ end_date }}" class="px-3 py-2">Previous</a>
+            {% endif %}
+            {% if page_object.has_next %}
+                <a href="?page={{ page_object.next_page_number }}&q={{ query }}&start_date={{ start_date }}&end_date={{ end_date }}" class="px-3 py-2">Next</a>
+                <a href="?page={{ page_object.paginator.num_pages }}&q={{ query }}&start_date={{ start_date }}&end_date={{ end_date }}" class="px-3 py-2">Last</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    function applyFilters() {
+        const query = document.querySelector('input[name="q"]').value;
+        const startDate = document.querySelector('input[name="start_date"]').value;
+        const endDate = document.querySelector('input[name="end_date"]').value;
+
+        let url = new URL(window.location.href);
+        url.searchParams.set('q', query);
+        url.searchParams.set('start_date', startDate);
+        url.searchParams.set('end_date', endDate);
+        url.searchParams.set('page', 1); // Reset to the first page on filter change
+        window.location.href = url;
+    }
+</script>
+
+{% endblock %}

@@ -1,0 +1,217 @@
+{% extends 'base.html' %}
+{% block head %}
+<style>
+    :root {
+        --primary-bg: #FEF9E1;
+        --secondary-bg: #EBF4F6;
+        --accent: hsl(0, 70%, 38%);
+        --text-color: #A31D1D;
+    }
+</style>
+{% endblock %}
+{% block content %}
+<h2 class="text-center text-xl font-semibold mb-4 text-[var(--text-color)]">Reports</h2>
+
+<!-- Date Filter Form -->
+<form method="GET" class="mb-4 flex flex-wrap gap-2 sm:gap-4 items-center">
+    <input type="date" name="start_date" class="border border-[var(--accent)] p-2 rounded w-full sm:w-auto bg-[var(--secondary-bg)] text-[var(--text-color)]">
+    <input type="date" name="end_date" class="border border-[var(--accent)] p-2 rounded w-full sm:w-auto bg-[var(--secondary-bg)] text-[var(--text-color)]">
+    <button type="submit" class="bg-[var(--accent)] text-white px-4 py-2 rounded w-full sm:w-auto">
+        Filter
+    </button>
+</form>
+
+<!-- Button to open tally modal -->
+<button onclick="openTallyModal()" class="bg-[var(--accent)] text-white px-4 py-2 rounded w-full sm:w-auto">
+    Generate Tally Report
+</button>
+
+<!-- Responsive Reports Table -->
+<div class="overflow-x-auto">
+    <table class="w-full min-w-max border-collapse border border-[var(--accent)] bg-[var(--secondary-bg)] text-[var(--text-color)]">
+        <thead>
+            <tr class="bg-[var(--accent)] text-white">
+                <th class="border p-2">Date</th>
+                <th class="border p-2">Opening Stock</th>
+                <th class="border p-2">Total Purchases</th>
+                <th class="border p-2">Total Purchase Returns</th>
+                <th class="border p-2">Total Sales</th>
+                <th class="border p-2">Total Sales Returns</th>
+                <th class="border p-2">Closing Stock</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for report in reports %}
+            <tr class="hover:bg-[var(--primary-bg)]">
+                <td class="border p-2">{{ report.created_at|date:"d-m-Y" }}</td>
+                <td class="border p-2">{{ report.opening_stock }}</td>
+                <td class="border p-2">{{ report.total_purchases }}</td>
+                <td class="border p-2">{{ report.total_purchase_returns }}</td>
+                <td class="border p-2">{{ report.total_sales_quantity }}</td>
+                <td class="border p-2">{{ report.total_sales_return }}</td>
+                <td class="border p-2">{{ report.closing_stock }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" class="border p-2 text-center">No reports found</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Tally Report Modal -->
+<div id="tallyModal" class="fixed inset-0 hidden bg-[var(--primary-bg)] bg-opacity-90 flex items-center justify-center p-4">
+    <div class="bg-[var(--secondary-bg)] text-[var(--text-color)] rounded-lg p-6 max-w-2xl sm:w-3/4 w-full overflow-y-auto max-h-[90vh]">
+        <h2 class="text-xl font-semibold mb-4 text-center">Day Closing Report</h2>
+
+        <!-- Purchases & Purchase Returns Table -->
+        <h3 class="text-lg font-medium mb-2">Purchases & Purchase Returns</h3>
+        <table class="w-full border border-[var(--accent)] mb-4">
+            <thead>
+                <tr class="bg-[var(--accent)] text-white">
+                    <th class="border p-2">Total Purchases</th>
+                    <th class="border p-2">Total Purchase Returns</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="border p-2" id="totalPurchases">0</td>
+                    <td class="border p-2" id="totalPurchaseReturns">0</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Sales & Sales Returns Table -->
+        <h3 class="text-lg font-medium mb-2">Sales & Sales Returns</h3>
+        <table class="w-full border border-[var(--accent)] mb-4">
+            <thead>
+                <tr class="bg-[var(--accent)] text-white">
+                    <th class="border p-2">Total Sales Quantity</th>
+                    <th class="border p-2">Total Sales Returns</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="border p-2" id="totalSales">0</td>
+                    <td class="border p-2" id="totalSalesReturns">0</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Closing Stock Verification -->
+        <h3 class="text-lg font-medium mb-2">Closing Stock Verification</h3>
+        <table class="w-full border border-[var(--accent)] mb-4">
+            <thead>
+                <tr class="bg-[var(--accent)] text-white">
+                    <th class="border p-2">Opening Stock</th>
+                    <th class="border p-2">Computed Closing Stock</th>
+                    <th class="border p-2">Actual Closing Stock</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="border p-2" id="openingStock">0</td>
+                    <td class="border p-2" id="computedClosingStock">0</td>
+                    <td class="border p-2" id="actualClosingStock">0</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Status Message -->
+        <p id="tallyStatus" class="text-center text-red-500 font-semibold hidden">
+            Error: Stock mismatch! Cannot generate report.
+        </p>
+
+        <div class="flex justify-end mt-4">
+            <button id="closeModal" class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 mr-2">
+                Close
+            </button>
+            <button id="submitTally" class="bg-[var(--accent)] text-white px-4 py-2 rounded-md hover:bg-[var(--text-color)] hover:text-black">
+                Submit
+            </button>
+        </div>
+    </div>
+</div>
+
+
+<script>
+// Function to get CSRF token from cookies
+function getCSRFToken() {
+    return document.cookie.split('; ').find(row => row.startsWith('csrftoken=')).split('=')[1];
+}
+
+// Open the modal & fetch data
+function openTallyModal() {
+    fetch('/generate-tally/')
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('openingStock').textContent = data.opening_stock;
+        document.getElementById('totalPurchases').textContent = data.total_purchases;
+        document.getElementById('totalPurchaseReturns').textContent = data.total_purchase_returns;
+        document.getElementById('totalSales').textContent = data.total_sales_quantity;
+        document.getElementById('totalSalesReturns').textContent = data.total_sales_return;
+        document.getElementById('actualClosingStock').textContent = data.actual_closing_stock;
+
+        // Compute expected closing stock
+        let computedStock = data.opening_stock + data.total_purchases - data.total_purchase_returns - data.total_sales_quantity + data.total_sales_return ;
+        document.getElementById('computedClosingStock').textContent = computedStock;
+
+        // Show modal
+        document.getElementById('tallyModal').classList.remove('hidden');
+    });
+}
+
+// Submit tally data when "Submit" is clicked
+document.getElementById('submitTally').addEventListener('click', function() {
+    let openingStock = parseInt(document.getElementById('openingStock').textContent);
+    let totalPurchases = parseInt(document.getElementById('totalPurchases').textContent);
+    let totalPurchaseReturns = parseInt(document.getElementById('totalPurchaseReturns').textContent);
+    let totalSales = parseInt(document.getElementById('totalSales').textContent);
+    let totalSalesReturns = parseInt(document.getElementById('totalSalesReturns').textContent);
+    let actualClosingStock = parseInt(document.getElementById('actualClosingStock').textContent);
+    let computedClosingStock = parseInt(document.getElementById('computedClosingStock').textContent);
+
+    // Validate closing stock before submission
+    if (computedClosingStock !== actualClosingStock) {
+        document.getElementById('tallyStatus').classList.remove('hidden');
+        return;
+    }
+
+    // Hide error message if previously shown
+    document.getElementById('tallyStatus').classList.add('hidden');
+
+    // Send data to backend
+    fetch('/save-tally/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
+        },
+        body: JSON.stringify({
+            opening_stock: openingStock,
+            total_purchases: totalPurchases,
+            total_purchase_returns: totalPurchaseReturns,
+            total_sales_quantity: totalSales,
+            total_sales_return: totalSalesReturns,
+            closing_stock: actualClosingStock
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('tallyModal').classList.add('hidden');
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            alert('Error saving tally report.');
+        }
+    });
+});
+
+// Close modal
+document.getElementById('closeModal').addEventListener('click', function() {
+    document.getElementById('tallyModal').classList.add('hidden');
+});
+</script>
+
+{% endblock %}

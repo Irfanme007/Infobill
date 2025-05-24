@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="flex items-center justify-center min-h-screen bg-gray-100">
+    <form method="post" enctype="multipart/form-data" class="w-full max-w-lg bg-white p-6 rounded-lg shadow-lg">
+        <h2 class="text-2xl font-semibold text-center text-gray-800 mb-4">Add Product</h2>
+
+        <!-- Display Success/Error Messages -->
+        {% if messages %}
+            {% for message in messages %}
+                {% if 'add_products' in message.tags %}
+                    <div class="p-4 mb-2 rounded-lg text-white shadow-md relative
+                        {% if 'success' in message.tags %} bg-green-500 
+                        {% elif 'error' in message.tags %} bg-red-500 
+                        {% else %} bg-gray-500 {% endif %}">
+                        {{ message }}
+                        <button type="button" class="absolute top-0 right-2 text-white text-lg font-bold" onclick="this.parentElement.style.display='none'">
+                            &times;
+                        </button>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+
+        {% csrf_token %}
+
+        <div class="space-y-4">
+            <div>
+                <label class="block text-gray-700 font-medium mb-1">Supplier Name</label>
+                <p class="border border-gray-300 p-2 rounded-md bg-gray-100">{{ supplier_name }}</p>
+            </div>
+            
+            <div>
+                <label class="block text-gray-700 font-medium mb-1">GSTIN</label>
+                <p class="border border-gray-300 p-2 rounded-md bg-gray-100">{{ supplier_gstin }}</p>
+            </div>
+                        
+
+            <!-- Form Fields with Error Messages Below -->
+            {% for field in form %}
+                <div>
+                    <label class="block text-gray-700 font-medium mb-1">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                        {% for error in field.errors %}
+                            <p class="text-red-500 text-sm mt-1">{{ error }}</p>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="flex justify-between mt-6">
+            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md shadow-md hover:bg-blue-700 transition">
+                Save
+            </button>
+            <button type="reset" id="reset-btn" class="bg-red-500 text-white px-4 py-2 rounded-md shadow-md hover:bg-red-600 transition">
+                Cancel
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // Select the cancel button
+    const resetBtn = document.getElementById("reset-btn");
+
+    resetBtn.addEventListener("click", function (event) {
+        event.preventDefault();  // Prevents the form from resetting
+
+        // Redirect to the supplier management page
+        window.location.href = "{% url 'supplier-management' %}";
+    });
+});
+
+</script>
+
+{% endblock %}

@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="min-h-screen bg-slate-100 text-gray-900 p-4 md:p-8">
+    <div class="flex flex-col md:flex-row">
+        <main class="flex-1">
+            <!-- Header -->
+            <h2 class="text-3xl md:text-4xl font-bold text-center mb-8 text-gray-800">📈 Sales Performance</h2>
+
+            <!-- Sales Chart -->
+            <div class="bg-white p-4 rounded-xl shadow-md">
+                <canvas id="salesChart" class="w-full h-64"></canvas>
+                <script id="sales-data" type="application/json">
+                    {{ sales_trend|safe }}
+                </script>
+            </div>
+
+            <!-- Stats -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-10">
+
+                <div class="bg-sky-100 p-5 rounded-lg shadow text-center">
+                    <h4 class="flex items-center justify-center gap-2 text-lg font-semibold text-sky-800">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a4 4 0 00-8 0v2M5 13h14l1 9H4l1-9z" />
+                        </svg>
+                        Total Sales till date
+                    </h4>
+                    <p class="text-3xl md:text-5xl mt-3 font-bold text-sky-900">₹{{ total_sales }}</p>
+                </div>
+
+                <div class="bg-emerald-100 p-5 rounded-lg shadow text-center">
+                    <h4 class="flex items-center justify-center gap-2 text-lg font-semibold text-emerald-800">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h18M3 9h18M9 21V9" />
+                        </svg>
+                        Total Stock
+                    </h4>
+                    <p class="text-3xl mt-3 font-bold text-emerald-900">{{ total_stock }} items</p>
+                </div>
+
+                <div class="bg-violet-100 p-5 rounded-lg shadow text-center">
+                    <h4 class="flex items-center justify-center gap-2 text-lg font-semibold text-violet-800">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        Monthly Sales for the year {{ year }}
+                    </h4>
+                    <form method="GET" class="mt-4">
+                        <select name="month" class="p-2 rounded-md bg-violet-50 text-violet-800 border border-violet-300" onchange="this.form.submit()">
+                            {% for month_value, month_label in months %}
+                            <option value="{{ month_value }}" {% if selected_month == month_value %}selected{% endif %}>
+                                {{ month_label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                    <p class="text-3xl mt-3 font-bold text-violet-900">₹{{ monthly_sales }}</p>
+                </div>
+
+            </div>
+
+            <!-- Tables Section -->
+            <div class="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                <div class="bg-white p-5 rounded-lg shadow overflow-x-auto">
+                    <h4 class="flex items-center gap-2 text-lg font-semibold mb-4 text-rose-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4h.582a1 1 0 01.894.553l2.83 5.657A4.978 4.978 0 0012 15a4.978 4.978 0 002.694-.79l2.83-5.657A1 1 0 0118.418 7H19V3H5z" />
+                        </svg>
+                        Top Selling Products
+                    </h4>
+                    <table class="min-w-full text-sm text-left text-gray-700">
+                        <thead>
+                            <tr class="border-b border-gray-200">
+                                <th class="py-2 px-3">Product</th>
+                                <th class="py-2 px-3">Quantity Sold</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for product in top_products %}
+                            <tr class="border-b hover:bg-rose-50">
+                                <td class="py-2 px-3">{{ product.item_name }}</td>
+                                <td class="py-2 px-3">{{ product.quantity }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="bg-white p-5 rounded-lg shadow overflow-x-auto">
+                    <h4 class="flex items-center gap-2 text-lg font-semibold mb-4 text-amber-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.054 0 1.643-1.14 1.077-2.048L13.077 4.952c-.527-.908-1.627-.908-2.154 0L3.005 18.952C2.439 19.86 3.028 21 4.082 21z" />
+                        </svg>
+                        Low Stock Products (less than 5)
+                    </h4>
+                    <table class="min-w-full text-sm text-left text-gray-700">
+                        <thead>
+                            <tr class="border-b border-gray-200">
+                                <th class="py-2 px-3">Product</th>
+                                <th class="py-2 px-3">Stock Left</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for product in low_stock_products %}
+                            <tr class="border-b hover:bg-amber-50">
+                                <td class="py-2 px-3">{{ product.name }}</td>
+                                <td class="py-2 px-3">{{ product.stock }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </main>
+    </div>
+</div>
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var salesData = JSON.parse(document.getElementById("sales-data").textContent);
+        var ctx = document.getElementById("salesChart").getContext("2d");
+
+        new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+                datasets: [{
+                    label: "Sales",
+                    data: salesData,
+                    borderColor: "#6366f1",
+                    backgroundColor: "rgba(99, 102, 241, 0.2)",
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: "#374151" } }
+                },
+                scales: {
+                    x: { ticks: { color: "#6b7280" } },
+                    y: { ticks: { color: "#6b7280" } }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

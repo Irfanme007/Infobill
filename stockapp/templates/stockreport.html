@@ -1,0 +1,225 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<main class="container mx-auto p-6">
+    <header class="mb-6 text-center">
+        <h2 class="text-3xl font-bold text-gray-900">Stock Report</h2>
+    </header>
+
+    <!-- Flash Messages (Auto-close after 3s) -->
+    {% if messages %}
+        <section id="flashMessages" class="mb-4">
+            {% for message in messages %}
+                <article class="p-3 rounded-lg text-white text-center mb-2
+                    {% if 'success' in message.tags %} bg-green-500 
+                    {% elif 'error' in message.tags %} bg-red-500 
+                    {% else %} bg-gray-500 {% endif %}">
+                    {{ message }}
+                </article>
+            {% endfor %}
+        </section>
+    {% endif %}
+
+<!-- Filters Section -->
+<section>
+    <form method="GET" id="filterForm" class="bg-gray-100 p-4 rounded-lg mb-6">
+        <div class="flex flex-col sm:flex-row sm:gap-4 items-center justify-between sm:justify-start">
+            <!-- Search Input -->
+            <label for="searchInput" class="sr-only">Search by name, brand, category</label>
+            <input type="text" name="q" id="searchInput" placeholder="Search by name, brand, category..." 
+                   class="border p-2 w-full sm:w-72 md:w-96 rounded focus:ring-2 focus:ring-blue-400 mb-4 sm:mb-0" 
+                   value="{{ query }}">
+
+            <!-- Filter Options: Sort, Date Range, Apply Button -->
+            <div class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto mt-4 sm:mt-0 items-center justify-center sm:justify-start">
+                <!-- Sort Dropdown -->
+                <label for="sort_by" class="sr-only">Sort by</label>
+                <select name="sort_by" id="sort_by" class="border p-2 w-full sm:w-32 rounded focus:ring-2 focus:ring-blue-400 mb-4 sm:mb-0">
+                    <option value="newest" {% if sort_by == 'newest' %}selected{% endif %}>Newest</option>
+                    <option value="oldest" {% if sort_by == 'oldest' %}selected{% endif %}>Oldest</option>
+                </select>
+
+                <!-- Date Filter -->
+                <div class="flex flex-wrap sm:flex-nowrap gap-2 w-full sm:w-auto mb-4 sm:mb-0">
+                    <label for="start_date" class="sr-only">Start Date</label>
+                    <input type="date" name="start_date" id="start_date" 
+                           class="border p-2 w-full sm:w-32 rounded focus:ring-2 focus:ring-blue-400" 
+                           value="{{ start_date }}">
+
+                    <span class="text-gray-600">to</span>
+
+                    <label for="end_date" class="sr-only">End Date</label>
+                    <input type="date" name="end_date" id="end_date" 
+                           class="border p-2 w-full sm:w-32 rounded focus:ring-2 focus:ring-blue-400" 
+                           value="{{ end_date }}">
+                </div>
+
+                <!-- Apply Filters Button -->
+                <button type="submit" class="bg-teal-600 text-white px-4 py-2 rounded mt-4 sm:mt-0 w-full sm:w-auto mb-4 sm:mb-0">
+                    Apply Filters
+                </button>
+                
+                <!-- Export CSV Button -->
+                <a href="{% url 'export-stock-csv' %}?{{ request.GET.urlencode }}" class="px-4 py-2 bg-green-600 text-white text-center rounded hover:bg-green-800 w-full sm:w-auto">
+                    Export CSV
+                </a>
+            </div>
+        </div>
+    </form>
+</section>
+
+
+    <!-- Table View -->
+    <section class="mt-6 overflow-x-auto">
+        <table class="min-w-full border border-gray-200 table-auto text-sm shadow-md rounded-lg">
+            <thead class="bg-teal-800 text-white text-sm">
+                <tr>
+                    <th class="py-3 px-4 text-left">SKU</th>
+                    <th class="py-3 px-4 text-left">Name</th>
+                    <th class="py-3 px-4 text-left">Supplier</th>
+                    <th class="py-3 px-4 text-left">Category</th>
+                    <th class="py-3 px-4 text-left">Description</th>
+                    <th class="py-3 px-4 text-left">Brand</th>
+                    <th class="py-3 px-4 text-left">Purchase Price</th>
+                    <th class="py-3 px-4 text-left">Selling Price</th>
+                    <th class="py-3 px-4 text-left">GST</th>
+                    <th class="py-3 px-4 text-left">Stock</th>
+                    <th class="py-3 px-4 text-left">Date Added</th>
+                    <th class="py-3 px-4 text-center">Action</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 text-gray-700">
+                {% for product in products %}
+                <tr class="hover:bg-gray-100 transition">
+                    <td class="py-3 px-4">{{ product.sku }}</td>
+                    <td class="py-3 px-4">{{ product.name }}</td>
+                    <td class="py-3 px-4">{{ product.supplier_name }}</td>
+                    <td class="py-3 px-4">{{ product.category }}</td>
+                    <td class="py-3 px-4">{{ product.description }}</td>
+                    <td class="py-3 px-4">{{ product.brand }}</td>
+                    <td class="py-3 px-4 text-right">₹{{ product.purchase_price }}</td>
+                    <td class="py-3 px-4 text-right">₹{{ product.selling_price }}</td>
+                    <td class="py-3 px-4">{{ product.gst }}%</td>
+                    <td class="py-3 px-4">{{ product.stock }}</td>  
+                    <td class="py-3 px-4">{{ product.purchase_date }}</td>
+                    <td class="py-3 px-4 text-center">
+                        <button class="text-teal-600 hover:underline openModalButton" 
+                                data-sku="{{ product.sku }}" data-name="{{ product.name }}" 
+                                data-brand="{{ product.brand }}" data-price="{{ product.purchase_price }}" 
+                                data-stock="{{ product.stock }}">
+                            Return
+                        </button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="12" class="py-4 text-center text-gray-500">No products available</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+    
+    <p class="text-sm sm:text-lg font-semibold text-grey-700">Total Stock: <span id="totalQuantity" class="font-bold text-base sm:text-xl">{{ total_qty }}</span></p>
+
+    <!-- Pagination -->
+    <section class="mt-4 flex flex-wrap justify-between items-center">
+        <div class="text-sm text-gray-600 w-full sm:w-auto">
+            Showing {{ products.start_index }} to {{ products.end_index }} of {{ products.paginator.count }} products
+        </div>
+        <div class="flex space-x-4 w-full sm:w-auto mt-4 sm:mt-0">
+            <span class="text-sm">
+                {% if products.has_previous %}
+                    <a href="?page=1&q={{ query }}&sort_by={{ sort_by }}&start_date={{ start_date }}&end_date={{ end_date }}" class="text-teal-600 hover:underline">&laquo; First</a>
+                {% endif %}
+            </span>
+            <span class="text-sm">
+                {% if products.has_previous %}
+                    <a href="?page={{ products.previous_page_number }}&q={{ query }}&sort_by={{ sort_by }}&start_date={{ start_date }}&end_date={{ end_date }}" class="text-teal-600 hover:underline">&lt; Previous</a>
+                {% endif %}
+            </span>
+            <span class="text-sm">
+                {% if products.has_next %}
+                    <a href="?page={{ products.next_page_number }}&q={{ query }}&sort_by={{ sort_by }}&start_date={{ start_date }}&end_date={{ end_date }}" class="text-teal-600 hover:underline">Next &gt;</a>
+                {% endif %}
+            </span>
+            <span class="text-sm">
+                {% if products.has_next %}
+                    <a href="?page={{ products.paginator.num_pages }}&q={{ query }}&sort_by={{ sort_by }}&start_date={{ start_date }}&end_date={{ end_date }}" class="text-teal-600 hover:underline">Last &raquo;</a>
+                {% endif %}
+            </span>
+        </div>
+    </section>
+
+    <!-- Return Modal -->
+    <section id="returnModal" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center hidden">
+        <div class="bg-white p-6 rounded-lg w-full sm:w-96">
+            <div class="flex justify-between items-center">
+                <h5 class="text-xl font-bold">Return Product</h5>
+                <button id="closeModalButton" class="text-gray-600">&times;</button>
+            </div>
+            <form id="returnForm" method="POST" action="{% url 'purchase-return' 'sku_placeholder' %}">
+                {% csrf_token %}
+                <input type="hidden" id="return_sku" name="sku">
+                <div class="mt-4">
+                    <label class="block">Product Name</label>
+                    <input type="text" id="return_name" name="name" class="border p-2 w-full rounded mt-1" readonly>
+                </div>
+                <div class="mt-4">
+                    <label class="block">Brand</label>
+                    <input type="text" id="return_brand" name="brand" class="border p-2 w-full rounded mt-1" readonly>
+                </div>
+                <div class="mt-4">
+                    <label class="block">Unit Price</label>
+                    <input type="text" id="return_price" name="price" class="border p-2 w-full rounded mt-1" readonly>
+                </div>
+                <div class="mt-4">
+                    <label class="block">Quantity to Return</label>
+                    <input type="number" id="return_quantity" name="quantity" class="border p-2 w-full rounded mt-1" min="1" required>
+                </div>
+                <div class="mt-6">
+                    <button type="submit" class="bg-teal-600 text-white px-4 py-2 rounded-md w-full">Return</button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+</main>
+
+
+<script>
+    // Auto-hide flash messages
+    setTimeout(() => {
+        const flashMessages = document.getElementById('flashMessages');
+        if (flashMessages) flashMessages.classList.add('hidden');
+    }, 3000);
+
+    // Open Modal
+    document.querySelectorAll('.openModalButton').forEach(button => {
+        button.addEventListener('click', function() {
+            const sku = this.dataset.sku;
+            const name = this.dataset.name;
+            const brand = this.dataset.brand;
+            const price = this.dataset.price;
+            const stock = this.dataset.stock;
+
+            document.getElementById('return_sku').value = sku;
+            document.getElementById('return_name').value = name;
+            document.getElementById('return_brand').value = brand;
+            document.getElementById('return_price').value = price;
+            document.getElementById('return_quantity').setAttribute('max', stock);
+
+            document.getElementById('returnForm').action = "{% url 'purchase-return' 'sku_placeholder'  %}".replace('sku_placeholder', sku);
+
+            document.getElementById('returnModal').classList.remove('hidden');
+        });
+    });
+
+    // Close Modal
+    document.getElementById('closeModalButton').addEventListener('click', function() {
+        document.getElementById('returnModal').classList.add('hidden');
+    });
+</script>
+
+{% endblock %}

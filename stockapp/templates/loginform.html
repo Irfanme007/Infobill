@@ -1,0 +1,82 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+</head>
+
+<body class="flex justify-center items-center min-h-screen bg-gray-100 relative overflow-hidden">
+
+    <!-- SVG Background Wave -->
+    <svg class="absolute top-0 left-0 w-full h-full z-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
+        <path fill="#3b82f6" fill-opacity="0.3"
+            d="M0,256L60,240C120,224,240,192,360,165.3C480,139,600,117,720,144C840,171,960,245,1080,245.3C1200,245,1320,171,1380,133.3L1440,96V320H0Z">
+        </path>
+    </svg>
+
+    <div id="login-box"
+        class="flex flex-col md:flex-row w-11/12 max-w-3xl bg-white shadow-xl rounded-lg overflow-hidden relative z-10 opacity-0 scale-75">
+        <!-- Close Icon -->
+        <a href="{% url 'welcome' %}"
+            class="absolute top-4 right-4 text-red-700 text-3xl font-semibold hover:text-red-900 transition duration-300 ease-in-out transform hover:scale-110">
+            &times;
+        </a>
+
+        <!-- Left Side: Login Form -->
+        <div class="w-full md:w-1/2 p-8 flex flex-col justify-center">
+            <h2 class="text-3xl font-semibold text-gray-800 mb-6 text-center animate-fade-in">Login</h2>
+
+            <form method="post" class="flex flex-col space-y-4">
+                {% csrf_token %}
+                <div>
+                    <label class="block text-gray-700 font-medium mb-1">Username</label>
+                    <input type="text" name="username"
+                        class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none transition duration-300 hover:border-blue-500"
+                        required>
+                </div>
+
+                <div>
+                    <label class="block text-gray-700 font-medium mb-1">Password</label>
+                    <input type="password" name="password"
+                        class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none transition duration-300 hover:border-blue-500"
+                        required>
+                </div>
+
+                <a href="{% url 'password_reset' %}" class="text-sm text-blue-600 hover:underline text-right">Forgot
+                    Password?</a>
+
+                <button type="submit"
+                    class="w-full bg-blue-600 text-white py-3 rounded-md font-semibold hover:bg-blue-700 transition transform hover:scale-105">Login</button>
+                <button type="reset"
+                    class="w-full bg-gray-200 text-gray-700 py-3 rounded-md font-semibold hover:bg-gray-300 transition transform hover:scale-105">Cancel</button>
+            </form>
+        </div>
+
+        <!-- Right Side: Image -->
+        <div class="hidden md:block md:w-1/2 bg-cover bg-center"
+            style="background-image: url('{% static 'stockapp/images/loginpageimage.jpg' %}')"></div>
+    </div>
+
+    <script>
+        // GSAP Animation for login box fade-in
+        gsap.to("#login-box", { opacity: 1, scale: 1, duration: 1, ease: "power2.out" });
+
+        // Hover effect animation for form inputs
+        document.querySelectorAll("input").forEach(input => {
+            input.addEventListener("focus", () => {
+                gsap.to(input, { scale: 1.05, duration: 0.3, ease: "power1.out" });
+            });
+            input.addEventListener("blur", () => {
+                gsap.to(input, { scale: 1, duration: 0.3, ease: "power1.out" });
+            });
+        });
+    </script>
+
+</body>
+
+</html>

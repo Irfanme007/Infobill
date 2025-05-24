@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Product Selection{% endblock %}
+
+{% block head %}
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto p-4 md:p-6 bg-gray-100 rounded-lg shadow-lg">
+    <div class="flex flex-col md:flex-row gap-6">
+        <!-- Left Side: Product Form -->
+        <div class="form-section w-full md:w-1/3 bg-white shadow-md p-6 rounded-lg border border-gray-200">
+            <h2 class="text-xl font-bold mb-4 text-gray-800">Select Products</h2>
+
+            <div class="customer-info bg-blue-100 p-3 rounded-md mb-4 text-blue-700">
+                <p><strong>Name:</strong> {{ customer.name }}</p>
+                <p><strong>Email:</strong> {{ customer.email }}</p>
+                <p><strong>Phone:</strong> {{ customer.phone }}</p>
+            </div>
+
+            <form id="bill-item-form" class="space-y-4">
+                {% csrf_token %}
+
+                <div id="suggestion-box" class="absolute bg-white border border-gray-300 w-full max-w-md p-2 shadow-lg hidden hover:bg-grey-600"></div>
+
+                <div class="space-y-3 ">
+                    {{ bill_item_form.as_p }}
+                </div>
+                <input type="hidden" id="product-sku">
+
+                <!-- Available Stock -->
+                <label for="available" class="block font-semibold">Available:</label>
+                <h3 id="available" class="text-lg text-blue-600 font-semibold">-</h3>
+
+                <!-- Buttons -->
+                <div class="flex space-x-2 mt-4">
+                    <button type="button" id="add-to-bill" 
+                        class="bg-blue-500 hover:bg-blue-700 text-white py-2 px-4 rounded w-full">
+                        Add to Bill
+                    </button>
+                    <button type="reset" 
+                        class="bg-gray-300 hover:bg-gray-400 text-black py-2 px-4 rounded w-full">
+                        Clear
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Right Side: Live Product Cart -->
+        <div class="cart-section w-full md:w-2/3 bg-white shadow-md p-6 rounded-lg border border-gray-200">
+            <h2 class="text-xl font-bold mb-4 text-gray-800">Selected Products</h2>
+
+            <div class="overflow-x-auto">
+                <table id="cart-items" class="w-full border border-gray-300 text-sm">
+                    <thead class="bg-gray-200 text-gray-600 uppercase">
+                        <tr>
+                            <th class="py-2 px-4 text-left">Item Name</th>
+                            <th class="py-2 px-4 text-left hidden sm:table-cell">Price</th>
+                            <th class="py-2 px-4 text-left">Qty</th>
+                            <th class="py-2 px-4 text-left hidden sm:table-cell">Subtotal</th>
+                            <th class="py-2 px-4 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cart-body" class="text-gray-700">
+                        <!-- Items will be dynamically inserted here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Total Container -->
+            <div class="mt-4 space-y-3">
+                <p class="text-lg font-semibold">Gross Total: ₹<span id="gross-total">0.00</span></p>
+
+                <!-- Discount Input -->
+                <div class="flex items-center space-x-2">
+                    <label for="discount" class="text-sm font-semibold">Discount:</label>
+                    <input type="number" id="discount" min="0" value="0" 
+                        class="border border-gray-400 p-2 rounded w-24 focus:ring-2 focus:ring-blue-400">
+                </div>
+
+                <p class="text-lg font-semibold">Net Total(Exc.GST): ₹<span id="net-total">0.00</span></p>
+
+                <button id="generate-bill" data-customer-id="{{ customer.id }}"
+                    class="w-full bg-green-500 hover:bg-green-700 text-white py-2 px-4 rounded">
+                    Generate Bill
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll("#bill-item-form input, #bill-item-form select").forEach(field => {
+            field.classList.add("w-full", "p-2", "border", "border-gray-400", "rounded", "focus:ring-2", "focus:ring-blue-400");
+        });
+    });
+</script>
+<script src="{% static 'billingapp/js/billing.js' %}"></script>
+{% endblock %}
+{% endblock %}

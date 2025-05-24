@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block head %}
+    <style>
+        /* Styling for Highlighting Text */
+        .highlight {
+            background-color: #6dc1f1;
+            font-weight: bold;
+            padding: 5 2;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container mx-auto p-4 sm:p-6">
+        <!-- Search Input and Button -->
+        <div class="flex flex-col sm:flex-row gap-4 mb-6">
+            <input type="text" id="searchQuery" class="w-full sm:w-2/3 p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Search by Name, Phone, or Email">
+            <button id="filterButton" class="mt-2 sm:mt-0 px-5 py-3 bg-teal-600 text-white rounded-md shadow hover:bg-blue-700 transition">
+                Filter
+            </button>
+        </div>
+
+        <!-- Table -->
+        <div class="overflow-x-auto bg-white shadow-xl rounded-lg">
+            <table class="min-w-full border-collapse">
+                <thead>
+                    <tr class="bg-red-800 text-white">
+                        <th class="px-4 py-3 text-left">Name</th>
+                        <th class="px-4 py-3 text-left">Phone</th>
+                        <th class="px-4 py-3 text-left">Email</th>
+                        <th class="px-4 py-3 text-left">Address</th>
+                    </tr>
+                </thead>
+                <tbody id="customerTable">
+                    {% for customer in customers %}
+                    <tr class="border-b hover:bg-gray-100 transition">
+                        <td class="px-4 py-3 customer-name">{{ customer.name|escape }}</td>
+                        <td class="px-4 py-3 customer-phone">{{ customer.phone|escape }}</td>
+                        <td class="px-4 py-3 customer-email">{{ customer.email|escape }}</td>
+                        <td class="px-4 py-3 customer-address">{{ customer.address|escape }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr class="no-data">
+                        <td colspan="4" class="px-4 py-3 text-center text-gray-500">No customers available</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- JavaScript for Filtering and Highlighting -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const searchQuery = document.getElementById("searchQuery");
+            const filterButton = document.getElementById("filterButton");
+            const tableRows = document.querySelectorAll("#customerTable tr");
+            const noDataRow = document.querySelector(".no-data");
+
+            function highlightMatch(text, query) {
+                if (!query) return text;
+                const regex = new RegExp(`(${query})`, "gi");
+                return text.replace(regex, `<span class="highlight">$1</span>`);
+            }
+
+            function filterTable() {
+                const query = searchQuery.value.trim().toLowerCase();
+                let visibleCount = 0;
+
+                tableRows.forEach(row => {
+                    if (row === noDataRow) return;
+
+                    const nameCell = row.querySelector(".customer-name");
+                    const phoneCell = row.querySelector(".customer-phone");
+                    const emailCell = row.querySelector(".customer-email");
+                    const addressCell = row.querySelector(".customer-address");
+
+                    const name = nameCell.textContent.trim();
+                    const phone = phoneCell.textContent.trim();
+                    const email = emailCell.textContent.trim();
+                    const address = addressCell.textContent.trim();
+
+                    const match = name.toLowerCase().includes(query) ||
+                                  phone.toLowerCase().includes(query) ||
+                                  email.toLowerCase().includes(query) ||
+                                  address.toLowerCase().includes(query);
+
+                    if (match) {
+                        row.style.display = "";
+                        visibleCount++;
+
+                        nameCell.innerHTML = highlightMatch(name, query);
+                        phoneCell.innerHTML = highlightMatch(phone, query);
+                        emailCell.innerHTML = highlightMatch(email, query);
+                        addressCell.innerHTML = highlightMatch(address, query);
+                    } else {
+                        row.style.display = "none";
+                    }
+                });
+
+                noDataRow.style.display = visibleCount === 0 ? "" : "none";
+            }
+
+            filterButton.addEventListener("click", filterTable);
+        });
+    </script>
+{% endblock %}

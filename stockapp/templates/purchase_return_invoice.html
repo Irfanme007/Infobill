@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mx-auto p-6">
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <!-- Invoice Header -->
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h2 class="text-3xl font-bold text-gray-900">Purchase Return Invoice</h2>
+                <p class="text-sm text-gray-500">Invoice Date: {{ purchase_return.return_date|date:"F d, Y" }}</p>
+            </div>
+            <div class="text-right">
+                <h4 class="font-semibold text-lg">Infopark Cyber Center</h4>
+                <p class="text-sm text-gray-500">Shafi Jammat Masjid Road</p>
+                <p class="text-sm text-gray-500">Gonikoppal</p>
+                <p class="text-sm text-gray-500">Phone: +1 234 567 890</p>
+                <p class="text-sm text-gray-500">Email: infopark@example.com</p>
+            </div>
+        </div>
+
+        <!-- Customer Information -->
+        <div class="mb-6">
+            {% if supplier %}
+            <h3 class="text-xl font-semibold mb-2">Returning To</h3>
+            <p><strong>Name:</strong> {{ purchase_return.supplier_name }}</p>
+            <p><strong>Address:</strong> {{ supplier.supplier_address }}</p>
+            <p><strong>Email:</strong> {{ supplier.supplier_email }}</p>
+            {% else %}
+            <p style="color: red;">Supplier details not found!</p>
+            {% endif %}
+        </div>
+
+        <!-- Product Information Table -->
+        <div class="mb-6">
+            <h3 class="text-xl font-semibold mb-2">Returned Product Details</h3>
+            <table class="min-w-full border-collapse">
+                <thead class="bg-teal-800 text-white text-sm">
+                    <tr>
+                        <th class="py-2 px-4 text-left">SKU</th>
+                        <th class="py-2 px-4 text-left">Product Name</th>
+                        <th class="py-2 px-4 text-left">Brand</th>
+                        <th class="py-2 px-4 text-left">Quantity Returned</th>
+                        <th class="py-2 px-4 text-left">Unit Price</th>
+                        <th class="py-2 px-4 text-left">Total Price</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 text-sm">
+                    <tr>
+                        <td class="py-2 px-4">{{ purchase_return.sku }}</td>
+                        <td class="py-2 px-4">{{ purchase_return.item_name }}</td>
+                        <td class="py-2 px-4">{{ purchase_return.item_brand }}</td>
+                        <td class="py-2 px-4">{{ purchase_return.quantity }}</td>
+                        <td class="py-2 px-4">₹{{ purchase_return.unit_price }}</td>
+                        <td class="py-2 px-4">₹{{ purchase_return.total_price }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Invoice Totals -->
+        <div class="mb-6 text-right">
+            <h3 class="text-xl font-semibold mb-2">Invoice Total</h3>
+            <p><strong>Total Price:</strong> ₹{{ purchase_return.total_price }}</p>
+        </div>
+
+        <!-- Print Button -->
+        <div class="text-center mt-6">
+            <button onclick="window.print()" class="bg-teal-600 text-white px-4 py-2 rounded-md print:hidden">Print Invoice</button>
+        </div>
+
+        <!-- Back Link -->
+        <div class="text-center mt-6">
+            <a href="{% url 'purchase-return-page' %}" class="text-teal-600 hover:underline print:hidden" >Back to Purchase Returns</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

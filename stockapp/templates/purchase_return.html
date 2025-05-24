@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<main class="container mx-auto p-6">
+    <h2 class="text-3xl font-bold text-center text-gray-900 mb-6">Purchase Returns</h2>
+
+<!-- Filters Section -->
+<section>
+    <form method="GET" id="filterForm" class="bg-gray-100 p-4 rounded-lg mb-6">
+        <div class="flex flex-col sm:flex-row sm:gap-4 items-center justify-center sm:space-x-4">
+            <!-- Search Bar -->
+            <label for="searchInput" class="sr-only">Search</label>
+            <input type="text" name="q" id="searchInput" placeholder="Search by SKU, name, or brand..."
+                   class="border p-2 w-full sm:w-72 rounded focus:ring-2 focus:ring-blue-400 mb-4 sm:mb-0"
+                   value="{{ query }}">
+
+            <!-- Date Filters -->
+            <div class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+                <label for="startDate" class="sr-only">From Date</label>
+                <input type="date" name="start_date" id="startDate" 
+                       class="border p-2 w-full sm:w-48 rounded focus:ring-2 focus:ring-blue-400" 
+                       value="{{ start_date }}">
+
+                <label for="endDate" class="sr-only">To Date</label>
+                <input type="date" name="end_date" id="endDate" 
+                       class="border p-2 w-full sm:w-48 rounded focus:ring-2 focus:ring-blue-400" 
+                       value="{{ end_date }}">
+            </div>
+
+            <!-- Buttons Section: Apply Filters and Export CSV -->
+            <div class="flex flex-col sm:flex-row gap-4 mt-4 sm:mt-0 sm:ml-4 w-full sm:w-auto">
+                <!-- Apply Filters Button -->
+                <button type="submit" class="px-4 py-2 bg-teal-600 text-white rounded hover:bg-teal-800 w-full sm:w-auto">
+                    Apply Filters
+                </button>
+
+                <!-- Export CSV Button -->
+                <a href="{% url 'export_purchase_return_csv' %}?{{ request.GET.urlencode }}" 
+                   class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-800 w-full sm:w-auto text-center">
+                    Export CSV
+                </a>
+            </div>
+        </div>
+    </form>
+</section>
+
+
+    <!-- Table View (Purchase Return List) -->
+    <section class="md:block mt-6">
+        <div class="bg-white shadow-md rounded-lg overflow-x-auto">
+            <table class="min-w-full border border-gray-200" id="purchaseReturnTable">
+                <thead class="bg-teal-800 text-white text-sm">
+                    <tr>
+                        <th class="py-2 px-3 text-left">SKU</th>
+                        <th class="py-2 px-3 text-left">Product Name</th>
+                        <th class="py-2 px-3 text-left">Supplier Name</th>
+                        <th class="py-2 px-3 text-left">Brand</th>
+                        <th class="py-2 px-3 text-left">Quantity Returned</th>
+                        <th class="py-2 px-3 text-left">Total Price</th>
+                        <th class="py-2 px-3 text-left">Return Date</th>
+                        <th class="py-2 px-3 text-center">Invoice</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 text-gray-700 text-sm" id="purchaseReturnTableBody">
+                    {% for return in purchase_returns %}
+                    <tr class="hover:bg-gray-100 transition">
+                        <td class="py-2 px-3">{{ return.sku }}</td>
+                        <td class="py-2 px-3">{{ return.item_name }}</td>
+                        <td class="py-2 px-3">{{ return.supplier_name }}</td>
+                        <td class="py-2 px-3">{{ return.item_brand }}</td>
+                        <td class="py-2 px-3">{{ return.quantity }}</td>
+                        <td class="py-2 px-3">₹{{ return.total_price }}</td>
+                        <td class="py-2 px-3">{{ return.return_date }}</td>
+                        <td class="py-2 px-3 text-center">
+                            <a href="{% url 'purchase-return-invoice' return.id %}" 
+                               class="text-teal-600 hover:underline">
+                                View Invoice
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="py-4 text-center text-gray-500">No purchase returns available</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section>
+        <p class="text-sm sm:text-lg font-semibold text-gray-700">Total Quantity: 
+            <span id="totalQuantity" class="font-bold text-base sm:text-xl">{{ total_qty }}</span>
+        </p>
+    </section>
+
+<!-- Pagination -->
+<section class="mt-4 flex flex-wrap justify-between items-center">
+    <!-- Pagination info: Showing items -->
+    <div class="text-sm text-gray-600 w-full sm:w-auto">
+        Showing {{ purchase_returns.start_index }} to {{ purchase_returns.end_index }} of {{ purchase_returns.paginator.count }} returns
+    </div>
+
+    <!-- Pagination controls -->
+    <div class="flex space-x-4 w-full sm:w-auto mt-4 sm:mt-0">
+        <!-- First Page Link -->
+        <span class="text-sm">
+            {% if purchase_returns.has_previous %}
+                <a href="?page=1{% if query %}&q={{ query }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" 
+                   class="text-teal-600 hover:underline">&laquo; First</a>
+            {% endif %}
+        </span>
+        
+        <!-- Previous Page Link -->
+        <span class="text-sm">
+            {% if purchase_returns.has_previous %}
+                <a href="?page={{ purchase_returns.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" 
+                   class="text-teal-600 hover:underline">&lt; Previous</a>
+            {% endif %}
+        </span>
+
+        <!-- Next Page Link -->
+        <span class="text-sm">
+            {% if purchase_returns.has_next %}
+                <a href="?page={{ purchase_returns.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" 
+                   class="text-teal-600 hover:underline">Next &gt;</a>
+            {% endif %}
+        </span>
+
+        <!-- Last Page Link -->
+        <span class="text-sm">
+            {% if purchase_returns.has_next %}
+                <a href="?page={{ purchase_returns.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" 
+                   class="text-teal-600 hover:underline">Last &raquo;</a>
+            {% endif %}
+        </span>
+    </div>
+</section>
+
+</main>
+{% endblock %}

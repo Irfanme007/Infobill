@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto p-6">
+    <h2 class="text-3xl font-bold text-center text-gray-900 mb-6">Purchase Report</h2>
+
+<!-- Filters Section -->
+<form method="GET" class="bg-gray-100 p-4 rounded-lg" id="filterForm">
+    <div class="flex flex-col sm:flex-row sm:gap-4 items-center justify-center">
+        <!-- Search Bar -->
+        <input type="text" id="searchInput" name="search" placeholder="Search by name, brand, category..."
+               class="border p-2 w-full sm:w-72 rounded focus:ring-2 focus:ring-blue-400 mb-4 sm:mb-0" 
+               value="{{ request.GET.search }}">
+
+        <!-- Date Filters -->
+        <div class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+            <input type="date" name="start_date" id="startDate" 
+                   class="border p-2 rounded w-full sm:w-48" value="{{ request.GET.start_date }}">
+            <input type="date" name="end_date" id="endDate" 
+                   class="border p-2 rounded w-full sm:w-48" value="{{ request.GET.end_date }}">
+        </div>
+
+        <!-- Buttons Section: Apply Filters and Export CSV -->
+        <div class="flex flex-col sm:flex-row gap-4 mt-4 sm:mt-0 sm:ml-4 w-full sm:w-auto">
+            <!-- Apply Filters Button -->
+            <button type="submit" class="px-4 py-2 bg-teal-600 text-white rounded hover:bg-teal-800 flex items-center justify-center gap-2 w-full sm:w-auto text-center">
+                Apply Filters
+            </button>
+            
+            <!-- Export CSV Button -->
+            <a href="{% url 'export-purchase-csv' %}?{{ request.GET.urlencode }}" 
+               class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-800 w-full sm:w-auto text-center">
+                Export CSV
+            </a>
+        </div>
+    </div>
+</form>
+
+    <!-- Combined View for Both Desktop and Mobile (Table) -->
+    <div class="mt-6">
+        <div class="overflow-x-auto bg-white shadow-md rounded-lg">
+            <table class="min-w-full border border-gray-200" id="productTable">
+                <thead class="bg-teal-800 text-white text-sm">
+                    <tr>
+                        <th class="py-2 px-3 text-left">SKU</th>
+                        <th class="py-2 px-3 text-left">Name</th>
+                        <th class="py-2 px-3 text-left">Category</th>
+                        <th class="py-2 px-3 text-left">Brand</th>
+                        <th class="py-2 px-3 text-left">Description</th>
+                        <th class="py-2 px-3 text-left">Purchase Price</th>
+                        <th class="py-2 px-3 text-left">Selling Price</th>
+                        <th class="py-2 px-3 text-left">GST</th>
+                        <th class="py-2 px-3 text-left">Stock</th>
+                        <th class="py-2 px-3 text-left">Date</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 text-gray-700 text-sm" id="productTableBody">
+                    {% for product in purchase %}
+                    <tr class="hover:bg-gray-100 transition product">
+                        <td class="py-2 px-3 sku">{{ product.sku }}</td>
+                        <td class="py-2 px-3 name">{{ product.name }}</td>
+                        <td class="py-2 px-3 category">{{ product.category }}</td>
+                        <td class="py-2 px-3 brand">{{ product.brand }}</td>
+                        <td class="py-2 px-3 description">{{ product.description }}</td>
+                        <td class="py-2 px-3 purchase-price">₹{{ product.purchase_price }}</td>
+                        <td class="py-2 px-3 selling-price">₹{{ product.selling_price }}</td>
+                        <td class="py-2 px-3 gst">{{ product.gst }}%</td>
+                        <td class="py-2 px-3 stock">{{ product.stock }}</td>
+                        <td class="py-2 px-3 date">{{ product.purchase_date|date:"d M Y" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="10" class="py-4 text-center text-gray-500">No products available</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <section>
+        <p class="text-sm sm:text-lg font-semibold text-gray-700">Total Quantity: 
+            <span id="totalQuantity" class="font-bold text-base sm:text-xl">{{ total_qty }}</span>
+        </p>
+    </section>
+    <!-- Pagination -->
+    <div class="flex justify-center items-center mt-6 space-x-2">
+        {% if purchase.has_previous %}
+            <a href="?page=1" class="px-3 py-2 bg-teal-600 text-white rounded-md hover:bg-teal-800">First</a>
+            <a href="?page={{ purchase.previous_page_number }}" class="px-3 py-2 bg-gray-300 rounded-md hover:bg-gray-400">Previous</a>
+        {% endif %}
+        <span class="px-4 py-2 bg-gray-200 rounded-md">Page {{ purchase.number }} of {{ purchase.paginator.num_pages }}</span>
+        {% if purchase.has_next %}
+            <a href="?page={{ purchase.next_page_number }}" class="px-3 py-2 bg-gray-300 rounded-md hover:bg-gray-400">Next</a>
+            <a href="?page={{ purchase.paginator.num_pages }}" class="px-3 py-2 bg-teal-600 text-white rounded-md hover:bg-teal-800">Last</a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    function confirmDelete(event, url) {
+        event.preventDefault();
+        Swal.fire({
+            title: "Are you sure?",
+            text: "This action cannot be undone!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: "Yes, delete it!",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = url;
+            }
+        });
+    }
+</script>
+
+{% endblock %}

@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Sales Return Bill{% endblock %}
+
+{% block head %}
+<style>
+    @media print {
+        @page { margin: 10mm; }
+        body { background-color: white; }
+        .print\:hidden { display: none; }
+        .print\:w-full { width: 100% !important; }
+        .print\:h-full { height: auto !important; }
+        .print\:shadow-none { box-shadow: none !important; }
+        .print\:border-none { border: none !important; }
+        .print\:p-8 { padding: 8mm !important; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { padding: 8px; border: 1px solid #888; text-align: left; }
+        th { background-color: #f4f4f4; }
+        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .page-break { page-break-before: always; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="flex justify-center items-center min-h-screen bg-gray-100 p-4 print:bg-white">
+    <div class="bg-white p-6 w-full max-w-4xl border border-gray-700 print:w-full print:shadow-none print:border-none print:p-8">
+        <!-- Header -->
+        <div class="flex justify-between items-center border-b border-gray-700 pb-3 mb-4">
+            <img src="{% static 'stockapp/images/infoparklogo.jpg' %}" alt="Company Logo" class="h-12 print:h-16">
+            <div class="text-right">
+                <h2 class="text-xl font-bold text-gray-800">SALES RETURN BILL</h2>
+                <p class="text-sm text-gray-600">Return Bill No: <span class="font-medium">{{ return_bill.id }}</span></p>
+                <p class="text-sm text-gray-600">Date: <span class="font-medium">{{ return_bill.return_date }}</span></p>
+            </div>
+        </div>
+        <!-- Billing Details -->
+        <div class="flex justify-between text-sm text-gray-800 mb-4 border-b border-gray-700 pb-3">
+            <div>
+                <p class="font-semibold">Infopark Computer Center</p>
+                <p>Gonikoppal</p>
+                <p>GSTIN: <span class="font-medium">29XXXXXXXXXXXX</span></p>
+                <p>Email: infoparkcc@gmail.com</p>
+            </div>
+            <div>
+                <p class="font-semibold">Bill To:</p>
+                <p>{{ return_bill.customer_name }}</p>
+                <p>Email: {{ return_bill.customer_email }}</p>
+                <p>Phone: {{ return_bill.customer_phone }}</p>
+            </div>
+        </div>
+        <!-- Return Items Table -->
+        <div class="border border-gray-700 overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-100 text-gray-800">
+                    <tr>
+                        <th class="p-2 border-gray-700">Item</th>
+                        <th class="p-2 border-gray-700">Qty</th>
+                        <th class="p-2 border-gray-700">Price/pc</th>
+                        <th class="p-2 border-gray-700">Discount</th>
+                        <th class="p-2 border-gray-700">Paid</th>
+                    </tr>
+                </thead>
+                <tbody class="text-gray-800">
+                    {% for item in sales_returns %}
+                    <tr class="border-t border-gray-700">
+                        <td class="p-2 border-gray-700">{{ item.item_name }}</td>
+                        <td class="p-2 border-gray-700 text-center">{{ item.quantity }}</td>
+                        <td class="p-2 border-gray-700 text-right">₹{{ item.unit_price|floatformat:2 }}</td>
+                        <td class="p-2 border-gray-700 text-right">₹{{ item.discount|floatformat:2 }}</td>
+                        <td class="p-2 border-gray-700 text-right font-semibold">₹{{ item.net_total|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <!-- Invoice Summary -->
+        <div class="mt-4 text-sm">
+            <div class="flex justify-between text-gray-800 border-b border-gray-700 pb-1">
+                <p>Refund Amount:</p>
+                <p>₹{{ total_refund|floatformat:2 }}</p>
+            </div>
+        </div>
+        <!-- Signature & Print Button -->
+        <div class="flex justify-between items-center mt-6">
+            <p class="font-semibold text-gray-800 text-sm">Authorized Signatory</p>
+            <button onclick="window.print()" class="px-4 py-2 bg-blue-700 text-white text-sm rounded-md hover:bg-blue-800 print:hidden">
+                Print Return Bill
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}

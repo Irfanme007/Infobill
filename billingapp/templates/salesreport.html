@@ -1,0 +1,283 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto p-6">
+    <!-- Heading with responsive font size -->
+    <h2 class="text-2xl font-bold text-center text-indigo-600 mb-6 font-roboto-slab sm:text-3xl md:text-4xl">
+        Sales Report
+    </h2>
+
+    <!-- Filters Section with responsive design -->
+    <form method="GET" class="bg-white p-6 rounded-lg shadow-lg" id="filterForm">
+        <div class="flex flex-wrap gap-4 items-center justify-between sm:justify-center">
+            <input type="text" name="q" id="searchInput" placeholder="Search by Bill No, Customer Name, Phone..." 
+                   value="{{ request.GET.q }}"
+                   class="border border-indigo-300 p-3 w-full sm:w-72 md:w-96 rounded-lg focus:ring-2 focus:ring-indigo-500 text-lg">
+
+            <input type="date" name="start_date" id="startDate" value="{{ request.GET.start_date }}" 
+                   class="border border-indigo-300 p-3 w-full sm:w-72 md:w-96 rounded-lg text-lg">
+
+            <input type="date" name="end_date" id="endDate" value="{{ request.GET.end_date }}" 
+                   class="border border-indigo-300 p-3 w-full sm:w-72 md:w-96 rounded-lg text-lg">
+
+            <button type="submit" class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all w-full sm:w-auto">
+                <span>Apply Filters</span>
+            </button>
+
+            <a href="{% url 'export-sales-csv' %}?q={{ request.GET.q }}&start_date={{ request.GET.start_date }}&end_date={{ request.GET.end_date }}&page={{ sales.number }}"
+               class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all w-full sm:w-auto">
+                <span>Export CSV</span>
+            </a>
+        </div>
+    </form>
+
+    <!-- Table Section with responsive design -->
+    <div class="mt-8">
+        <div class="overflow-x-auto bg-white shadow-2xl rounded-lg">
+            <table class="min-w-full border-collapse border border-gray-200">
+                <thead class="bg-indigo-50 text-indigo-700 text-sm">
+                    <tr>
+                        <th class="py-3 px-4 text-left">Bill No</th>
+                        <th class="py-3 px-4 text-left">Customer Name</th>
+                        <th class="py-3 px-4 text-left">Phone</th>
+                        <th class="py-3 px-4 text-left">Email</th>
+                        <th class="py-3 px-4 text-left">Qty</th>
+                        <th class="py-3 px-4 text-left">Amount</th>
+                        <th class="py-3 px-4 text-left">Date</th>
+                        <th class="py-3 px-4 text-center" colspan="2">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 text-gray-700 text-sm">
+                    {% for bill in bills %}
+                    <tr class="hover:bg-indigo-50 transition duration-300 ease-in-out">
+                        <td class="py-3 px-4">{{ bill.id }}</td>
+                        <td class="py-3 px-4">{{ bill.customer_name }}</td>
+                        <td class="py-3 px-4">{{ bill.customer_phone }}</td>
+                        <td class="py-3 px-4">{{ bill.customer_email }}</td>
+                        <td class="py-3 px-4">{{ bill.total_quantities }}</td>
+                        <td class="py-3 px-4">₹{{ bill.net_total }}</td>
+                        <td class="py-3 px-4">{{ bill.sales_date|date:"Y-m-d" }}</td>
+                        <td class="py-3 px-4 text-center">
+                            <button class="text-white px-3 py-2 rounded-full bg-red-500 hover:bg-red-600 delete-btn transition-all" data-bill-id="{{ bill.id }}">
+                                Delete
+                            </button>
+                        </td>
+                        <td class="py-3 px-4 text-center">
+                            <a href="{% url 'open-bill' bill.id %}" class="text-white px-3 py-2 rounded-full hover:underline bg-blue-500 hover:bg-blue-600 transition-all">
+                                Open
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="py-4 text-center text-gray-500">No sales records available</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Delete Modal with mobile-first responsiveness -->
+    <div id="deleteModal" class="fixed inset-0 flex items-center justify-center hidden bg-gray-800 bg-opacity-50">
+        <div class="bg-white p-6 sm:p-8 rounded-lg shadow-xl w-full sm:w-3/4 md:w-2/3 lg:w-1/2">
+            <h2 class="text-2xl font-semibold mb-6 text-indigo-700 text-center">Select Items to Return</h2>
+            
+            <!-- Table for displaying items -->
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse border">
+                    <thead>
+                        <tr class="bg-indigo-100 text-indigo-700 text-sm">
+                            <th class="border p-3 text-left">SKU</th>
+                            <th class="border p-3 text-left">Item Name</th>
+                            <th class="border p-3 text-left">Quantity Purchased</th>
+                            <th class="border p-3 text-left">Quantity to Return</th>
+                            <th class="border p-3 text-left">Quantity Returned</th>
+                            <th class="border p-3 text-left">Quantity Remaining</th>
+                            <th class="border p-3 text-left">Unit Price</th>
+                            <th class="border p-3 text-left">Discount</th>
+                            <th class="border p-3 text-left">Net Refund</th>
+                        </tr>
+                    </thead>
+                    <tbody id="billItemsContainer">
+                        <!-- Dynamic content will go here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Buttons for closing modal or confirming action -->
+            <div class="flex flex-col sm:flex-row justify-end mt-6 gap-4">
+                <button id="closeModal" class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-all w-full sm:w-auto">Cancel</button>
+                <button id="confirmDelete" class="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-all w-full sm:w-auto" disabled>Return Selected</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="flex justify-center mt-6">
+        <div class="pagination">
+            {% if page_object.has_previous %}
+                <a href="?page=1&q={{ query }}&start_date={{ start_date }}&end_date={{ end_date }}" class="px-4 py-2 bg-indigo-500 text-white rounded-lg">First</a>
+                <a href="?page={{ page_object.previous_page_number }}&q={{ query }}&start_date={{ start_date }}&end_date={{ end_date }}" class="px-4 py-2 bg-indigo-500 text-white rounded-lg">Previous</a>
+            {% endif %}
+            
+            <span class="px-4 py-2 bg-indigo-200 text-indigo-700 rounded-lg">{{ page_object.number }} of {{ page_object.paginator.num_pages }}</span>
+            
+            {% if page_object.has_next %}
+                <a href="?page={{ page_object.next_page_number }}&q={{ query }}&start_date={{ start_date }}&end_date={{ end_date }}" class="px-4 py-2 bg-indigo-500 text-white rounded-lg">Next</a>
+                <a href="?page={{ page_object.paginator.num_pages }}&q={{ query }}&start_date={{ start_date }}&end_date={{ end_date }}" class="px-4 py-2 bg-indigo-500 text-white rounded-lg">Last</a>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const deleteButtons = document.querySelectorAll(".delete-btn");
+    const modal = document.getElementById("deleteModal");
+    const closeModal = document.getElementById("closeModal");
+    const confirmDelete = document.getElementById("confirmDelete");
+    const billItemsContainer = document.getElementById("billItemsContainer");
+
+    let selectedBillId = null;
+
+    deleteButtons.forEach(button => {
+        button.addEventListener("click", function () {
+            selectedBillId = this.dataset.billId;
+            fetchBillItems(selectedBillId);
+        });
+    });
+
+    function fetchBillItems(billId) {
+        confirmDelete.disabled = true; // Disable return button initially
+        billItemsContainer.innerHTML = "<tr><td colspan='9' class='text-center p-4'>Loading...</td></tr>";
+
+        fetch(`/billing/get-bill-items/${billId}/`)
+            .then(response => response.json())
+            .then(data => {
+                billItemsContainer.innerHTML = "";
+
+                if (!data.items || data.items.length === 0) {
+                    billItemsContainer.innerHTML = "<tr><td colspan='9' class='text-center text-gray-500'>No items found</td></tr>";
+                    return;
+                }
+
+                data.items.forEach(item => {
+                    let total_price = item.unit_price * item.quantity;
+                    let discount = item.discount ? parseFloat(item.discount) : 0;
+                    let net_refund = total_price - discount;
+
+                    let disabled = item.remaining_qty === 0 ? "disabled" : "";
+                    let placeholderText = item.remaining_qty === 0 ? "Fully returned" : "";
+
+                    billItemsContainer.innerHTML += `
+                    <tr class="border">
+                        <td class="border p-2 text-sm sm:text-base">${item.sku}</td>
+                        <td class="border p-2 text-sm sm:text-base">${item.item_name}</td>
+                        <td class="border p-2 text-sm sm:text-base">${item.quantity}</td>
+                        <td class="border p-2 text-center text-sm sm:text-base">
+                            <input type="number" class="quantity-input border p-2 w-full sm:w-24 md:w-16"
+                                data-sku="${item.sku}"
+                                max="${item.remaining_qty}"
+                                min="0" value="0"
+                                ${disabled}
+                                placeholder="${placeholderText}">
+                        </td>
+                        <td class="border p-2 text-sm sm:text-base">${item.returned_qty}</td>
+                        <td class="border p-2 text-sm sm:text-base">${item.remaining_qty}</td>
+                        <td class="border p-2 text-sm sm:text-base">${item.unit_price.toFixed(2)}</td>
+                        <td class="border p-2 text-sm sm:text-base">${discount.toFixed(2)}</td>
+                        <td class="border p-2 text-sm sm:text-base">${net_refund.toFixed(2)}</td>
+                    </tr>
+                    `;
+                });
+
+                modal.classList.remove("hidden");
+                validateReturnSelection();
+            })
+            .catch(error => {
+                console.error("Error fetching bill items:", error);
+                billItemsContainer.innerHTML = "<tr><td colspan='9' class='text-center text-red-500'>Error loading items</td></tr>";
+            });
+    }
+
+    function validateReturnSelection() {
+        let hasValidSelection = false;
+        document.querySelectorAll(".quantity-input").forEach(input => {
+            input.addEventListener("input", function () {
+                let value = parseInt(this.value) || 0;
+                let maxQty = parseInt(this.max);
+
+                if (value > maxQty) {
+                    this.value = maxQty;
+                }
+                if (value < 0) {
+                    this.value = 0;
+                }
+
+                hasValidSelection = [...document.querySelectorAll(".quantity-input")]
+                    .some(input => parseInt(input.value) > 0);
+
+                confirmDelete.disabled = !hasValidSelection;
+            });
+        });
+    }
+
+    closeModal.addEventListener("click", () => {
+        modal.classList.add("hidden");
+    });
+
+    confirmDelete.addEventListener("click", function () {
+        if (!selectedBillId) {
+            alert("No bill selected.");
+            return;
+        }
+
+        let returnData = [];
+        document.querySelectorAll(".quantity-input").forEach(input => {
+            let qty = parseInt(input.value) || 0;
+            let sku = input.dataset.sku;
+            if (qty > 0) {
+                returnData.push({ sku, return_qty: qty });
+            }
+        });
+
+        if (returnData.length === 0) {
+            alert("Please select at least one item to return.");
+            return;
+        }
+
+        confirmDelete.disabled = true;
+        confirmDelete.innerText = "Processing...";
+
+        fetch(`/billing/remove-bill/${selectedBillId}/`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}",
+            },
+            body: JSON.stringify({ items: returnData }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                modal.classList.add("hidden");
+                location.reload();  // Reload the page to reflect changes
+            } else {
+                alert(data.error || "An error occurred. Please try again.");
+                confirmDelete.disabled = false;
+                confirmDelete.innerText = "Return Selected";
+            }
+        })
+        .catch(error => {
+            alert("An error occurred. Please try again.");
+            confirmDelete.disabled = false;
+            confirmDelete.innerText = "Return Selected";
+        });
+    });
+});
+</script>
+
+{% endblock %}

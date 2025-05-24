@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+
+{% block head %}
+    <style>
+        /* Styling for Highlighting Text */
+        .highlight {
+            background-color: #f1ee36; /* Light beige for highlights */
+            color: #1a1818; /* Dark brown for the text */
+            font-weight: bold;
+            padding: 3px 5px;
+            border-radius: 4px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="max-w-6xl mx-auto p-6 bg-white shadow-lg rounded-lg">
+
+        <!-- Search Input and Button -->
+        <div class="flex flex-col sm:flex-row gap-4 items-center mb-6">
+            <input type="text" id="searchQuery" placeholder="Search by Name, Phone, or Email"
+                class="w-full sm:w-2/3 p-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
+            <button id="filterButton" class="mt-2 sm:mt-0 px-5 py-3 bg-teal-600 text-white rounded-md shadow hover:bg-teal-800 transition">
+                Filter
+            </button>
+        </div>
+
+        <!-- Table Container -->
+        <div class="overflow-x-auto bg-white rounded-lg shadow-md">
+            <table class="min-w-full border-collapse">
+                <thead>
+                    <tr class="bg-red-800 text-white">
+                        <th class="px-5 py-3">Name</th>
+                        <th class="px-5 py-3">Phone</th>
+                        <th class="px-5 py-3">Email</th>
+                        <th class="px-5 py-3">GSTIN</th>
+                        <th class="px-5 py-3">Address</th>
+                    </tr>
+                </thead>
+                <tbody id="supplierTable">
+                    {% for supplier in suppliers %}
+                    <tr class="border-b hover:bg-gray-300">
+                        <td class="px-5 py-3 supplier-name">{{ supplier.supplier_name|escape }}</td>
+                        <td class="px-5 py-3 supplier-phone">{{ supplier.supplier_phone|escape }}</td>
+                        <td class="px-5 py-3 supplier-email">{{ supplier.supplier_email|escape }}</td>
+                        <td class="px-5 py-3 supplier-gstin">{{ supplier.supplier_gstin|escape }}</td>
+                        <td class="px-5 py-3 supplier-address">{{ supplier.supplier_address|escape }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr id="noDataRow">
+                        <td colspan="5" class="px-5 py-3 text-center text-gray-500">No suppliers to show</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- JavaScript for Search & Highlighting -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const searchQuery = document.getElementById("searchQuery");
+            const filterButton = document.getElementById("filterButton");
+            const tableRows = document.querySelectorAll("#supplierTable tr");
+            const noDataRow = document.getElementById("noDataRow");
+
+            function resetHighlights() {
+                document.querySelectorAll(".highlight").forEach(el => {
+                    el.replaceWith(document.createTextNode(el.textContent));
+                });
+            }
+
+            function highlightMatch(text, query) {
+                if (!query) return text;
+                const regex = new RegExp(`(${query})`, "gi");
+                return text.replace(regex, `<span class="highlight">$1</span>`);
+            }
+
+            function filterTable() {
+                const query = searchQuery.value.trim().toLowerCase();
+                let visibleCount = 0;
+                
+                resetHighlights(); // Reset previous highlights
+
+                tableRows.forEach(row => {
+                    if (row === noDataRow) return; // Skip "No suppliers" row
+
+                    const nameCell = row.querySelector(".supplier-name");
+                    const phoneCell = row.querySelector(".supplier-phone");
+                    const emailCell = row.querySelector(".supplier-email");
+                    const gstinCell = row.querySelector(".supplier-gstin");
+                    const addressCell = row.querySelector(".supplier-address");
+
+                    const name = nameCell.textContent.trim();
+                    const phone = phoneCell.textContent.trim();
+                    const email = emailCell.textContent.trim();
+                    const gstin = gstinCell.textContent.trim();
+                    const address = addressCell.textContent.trim();
+
+                    const match = name.toLowerCase().includes(query) ||
+                                  phone.toLowerCase().includes(query) ||
+                                  email.toLowerCase().includes(query) ||
+                                  gstin.toLowerCase().includes(query) ||
+                                  address.toLowerCase().includes(query);
+
+                    if (match) {
+                        row.style.display = "";
+                        visibleCount++;
+
+                        // Apply highlighting
+                        nameCell.innerHTML = highlightMatch(name, query);
+                        phoneCell.innerHTML = highlightMatch(phone, query);
+                        emailCell.innerHTML = highlightMatch(email, query);
+                        gstinCell.innerHTML = highlightMatch(gstin, query);
+                        addressCell.innerHTML = highlightMatch(address, query);
+                    } else {
+                        row.style.display = "none";
+                    }
+                });
+
+                // Show "No suppliers" row only if no results are found
+                noDataRow.style.display = visibleCount === 0 ? "" : "none";
+            }
+
+            // Filter on button click
+            filterButton.addEventListener("click", filterTable);
+
+            // Optional: Enable live search on input change
+            searchQuery.addEventListener("input", filterTable);
+        });
+    </script>
+{% endblock %}
